@@ -10,19 +10,19 @@ final class MainViewController: UIViewController {
     
     // MARK: - Object Outlets
     @IBOutlet private var stampButtons: [UIButton]!
+    @IBOutlet private var undoButton: UIBarButtonItem!
+    @IBOutlet private var redoButton: UIBarButtonItem!
     
     // MARK: - Private Objects
     private var selectedColor: UIColor = .blue
-    
-    
-    
+    private var colorCount: [UIColor: Int] = [:]
+    private var undoLabels: [UILabel] = []
+    private var redoLabels: [UILabel] = []
+
 }
 
 // MARK: - Action Outlets
 private extension MainViewController {
-    
-    
- 
     
     @IBAction func stampTapped(_ sender: UIButton) {
         
@@ -34,7 +34,17 @@ private extension MainViewController {
         selectedColor = stampColor
         updateButtonColors(selectedButton: sender)
     }
+    @IBAction func undoPressed(_ sender: UIBarButtonItem) {
+        guard let lastLabel = undoLabels.popLast() else { return }
+        if let labelColor = lastLabel.backgroundColor, let count = colorCount[labelColor] {
+            colorCount[labelColor] = count - 1
+        }
+        lastLabel.removeFromSuperview()
+        
+       // updateUndoButtonState()
+    }
 }
+
 
 // MARK: - Helper Methods
 private extension MainViewController {
@@ -54,10 +64,45 @@ private extension MainViewController {
     //MARK: - *Create-R-U-D*
     
     func addSquare(with color: UIColor, at location: CGPoint) {
-        let square = UIView(frame: CGRect(x: location.x, y: location.y,
+        
+        //MARK: - Since UILabel conforms to 
+       // let squareView = UIView(frame: CGRect(x: location.x, y: location.y, width: 50.0, height: 50.0))
+        
+        let squareLabelView = UILabel(frame: CGRect(x: location.x, y: location.y,
                                           width: 50.0, height: 50.0))
-        square.backgroundColor = selectedColor
-        view.addSubview(square)
+        squareLabelView.backgroundColor = selectedColor
+        squareLabelView.textAlignment = .center
+        squareLabelView.textColor = selectedColor.inverseColor() ?? .white
+        
+        if let existingColorCount = colorCount[selectedColor] {
+            colorCount[selectedColor] = existingColorCount + 1
+            squareLabelView.text = String(existingColorCount + 1)
+        } else {
+            squareLabelView.text = "1"
+            colorCount[selectedColor] = 1
+        }
+        view.addSubview(squareLabelView)
+        undoLabels.append(squareLabelView)
+        updateUndoButtonState()
+        updateRedoButtonState()
+        view.addSubview(squareLabelView)
     }
-    
+
+        func updateUndoButtonState() {
+        if undoLabels.isEmpty, undoButton.isEnabled {
+            undoButton.isEnabled = false
+        } else if !undoLabels.isEmpty, !undoButton.isEnabled {
+            undoButton.isEnabled = true
+        }
+    }
+
+    func updateRedoButtonState() {
+        if redoLabels.isEmpty, redoButton.isEnabled {
+            redoButton.isEnabled = false
+        } else if !redoLabels.isEmpty, !redoButton.isEnabled {
+            redoButton.isEnabled = true
+        }
+    }
+//
 }
+ 
